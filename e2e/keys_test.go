@@ -6,7 +6,8 @@ import (
 	"testing"
 	"time"
 
-	geojson "github.com/paulmach/go.geojson"
+	"github.com/paulmach/orb"
+	geojson "github.com/paulmach/orb/geojson"
 	"github.com/stretchr/testify/require"
 	"github.com/xjem/t38c"
 )
@@ -28,7 +29,7 @@ func testKeys(client *t38c.Client) func(t *testing.T) {
 		resp, err := client.Keys.Get("foo", "bar", false)
 		require.NoError(t, err)
 
-		require.Equal(t, geojson.NewPointGeometry([]float64{0, 0}), resp.Object.Geometry)
+		require.Equal(t, orb.Point{0, 0}, resp.Object.Geometry)
 
 		err = client.Keys.Set("foo", "baz").Bounds(0, 0, 20, 20).Field("age", 20).Expiration(2).Do()
 		require.NoError(t, err)
@@ -36,13 +37,13 @@ func testKeys(client *t38c.Client) func(t *testing.T) {
 		resp, err = client.Keys.Get("foo", "baz", true)
 		require.NoError(t, err)
 
-		require.Equal(t, geojson.NewPolygonGeometry([][][]float64{{
+		require.Equal(t, orb.Polygon{{
 			{0, 0},
 			{20, 0},
 			{20, 20},
 			{0, 20},
 			{0, 0},
-		}}), resp.Object.Geometry)
+		}}, resp.Object.Geometry)
 
 		time.Sleep(time.Second * 3)
 
@@ -56,13 +57,15 @@ func testWithin(client *t38c.Client) func(t *testing.T) {
 		err := client.Keys.Set("points", "point-1").Point(1, 1).Do()
 		require.NoError(t, err)
 
-		geom := geojson.NewPolygonGeometry([][][]float64{{
-			{0, 0},
-			{20, 0},
-			{20, 20},
-			{0, 20},
-			{0, 0},
-		}})
+		geom := &geojson.Geometry{
+			Coordinates: orb.Polygon{{
+				{0, 0},
+				{20, 0},
+				{20, 20},
+				{0, 20},
+				{0, 0},
+			}},
+		}
 
 		err = client.Keys.Set("areas", "area-1").Geometry(geom).Do()
 		require.NoError(t, err)
